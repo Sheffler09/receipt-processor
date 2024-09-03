@@ -1,0 +1,17 @@
+{
+  "name": "receipt-processor",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Receipt processing exercise to demonstrate API development",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Cody Sheffler",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
