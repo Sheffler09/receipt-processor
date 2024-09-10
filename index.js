@@ -1,14 +1,18 @@
-import express, { json } from 'express';
-import { v4 as uuidv4 } from 'uuid';
+const express = require('express');
+const { json } = require('express');
+const { v4: uuidv4 } = require('uuid');
+
+const { DEFAULT_PORT } = require('./constants');
 
 // Initialize the Express app and listen on the specified port.
 const app = express();
 app.use(json());
 
-const PORT = 3000;
-app.listen(PORT, () => {
-  console.log(`Receipt processor is running on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(DEFAULT_PORT, () => {
+    console.log(`Receipt processor is running on port ${DEFAULT_PORT}`);
+  });
+}
 
 // For the exercise, we'll store receipt IDs and their points in memory.
 const receipts = {};
@@ -16,6 +20,7 @@ const receipts = {};
 // Endpoint to process receipts, generate their IDs, and store their points.
 app.post('/receipts/process', (req, res) => {
   const receipt = req.body;
+
   const id = uuidv4();
   const points = calculatePoints(receipt);
 
@@ -87,3 +92,5 @@ function calculatePoints(receipt) {
 
   return points;
 }
+
+module.exports = app;

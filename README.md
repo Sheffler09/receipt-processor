@@ -24,7 +24,7 @@ You can pass data to the running endpoints via curl.
 ```bash
 curl -X POST http://localhost:3000/receipts/process \
      -H "Content-Type: application/json" \
-     -d @example-receipt-1.json
+     -d @__tests__/data/example-receipt-1.json
 ```
 
 Using the uuid returned from the `POST` request to the `/receipts/process`
