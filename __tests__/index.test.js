@@ -22,11 +22,60 @@ afterAll((done) => {
 
 describe('POST /receipts/process', () => {
   it('should process example-receipt-1 successfully and return a uuid', async () => {
-    receiptId1 = await processReceipt(exampleReceipt1);
+    receiptId1 = await processValidReceipt(exampleReceipt1);
   });
 
   it('should process example-receipt-2 successfully and return a uuid', async () => {
-    receiptId2 = await processReceipt(exampleReceipt2);
+    receiptId2 = await processValidReceipt(exampleReceipt2);
+  });
+
+  describe('invalid receipts', () => {
+    it('should reject empty receipts', async () => {
+      await processInvalidReceipt({});
+    });
+
+    const simpleReceipt = {
+      retailer: 'Test Retailer',
+      purchaseDate: '2021-01-01',
+      purchaseTime: '12:00',
+      items: [
+        {
+          shortDescription: 'Test Item',
+          price: '1.23',
+        },
+      ],
+      total: '1.23',
+    };
+
+    it('should reject receipts with empty retailer', async () => {
+      await processInvalidReceipt({ ...simpleReceipt, retailer: '' });
+    });
+
+    it('should reject receipts with incompatible purchase dates', async () => {
+      await processInvalidReceipt({ ...simpleReceipt, purchaseDate: '12021-01-01' });
+    });
+
+    it('should reject receipts with incompatible purchase times', async () => {
+      await processInvalidReceipt({ ...simpleReceipt, purchaseTime: '123:00' });
+    });
+
+    it('should reject receipts with negative totals', async () => {
+      await processInvalidReceipt({ ...simpleReceipt, total: '-1.23' });
+    });
+
+    it('should reject receipts with empty items', async () => {
+      await processInvalidReceipt({ ...simpleReceipt, items: [] });
+    });
+
+    it('should reject receipts with empty item short descriptions', async () => {
+      const itemsOverride = [{ ...simpleReceipt.items[0], shortDescription: '' }];
+      await processInvalidReceipt({ ...simpleReceipt, items: itemsOverride });
+    });
+
+    it('should reject receipts with negative item prices', async () => {
+      const itemsOverride = [{ ...simpleReceipt.items[0], price: '-1.23' }];
+      await processInvalidReceipt({ ...simpleReceipt, items: itemsOverride });
+    });
   });
 });
 
@@ -46,7 +95,7 @@ describe('GET /receipts/:id/points', () => {
   });
 });
 
-async function processReceipt(receiptData) {
+async function processValidReceipt(receiptData) {
   const res = await request(app)
     .post('/receipts/process')
     .send(receiptData);
@@ -56,6 +105,15 @@ async function processReceipt(receiptData) {
   expect(res.body.id).toMatch(/^[0-9a-f-]{36}$/); // UUID v4.
 
   return res.body.id;
+}
+
+async function processInvalidReceipt(receiptData) {
+  const res = await request(app)
+    .post('/receipts/process')
+    .send(receiptData);
+
+  expect(res.statusCode).toEqual(400);
+  expect(res.body).toHaveProperty('errors');
 }
 
 async function checkReceiptPoints(receiptId, expectedPoints) {

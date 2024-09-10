@@ -1,12 +1,12 @@
 const express = require('express');
-const { json } = require('express');
 const { v4: uuidv4 } = require('uuid');
+const { check, validationResult } = require('express-validator');
 
 const { DEFAULT_PORT } = require('./constants');
 
 // Initialize the Express app and listen on the specified port.
 const app = express();
-app.use(json());
+app.use(express.json());
 
 if (require.main === module) {
   app.listen(DEFAULT_PORT, () => {
@@ -17,8 +17,34 @@ if (require.main === module) {
 // For the exercise, we'll store receipt IDs and their points in memory.
 const receipts = {};
 
+// Validation middleware for /receipts/process endpoint.
+const validateReceipt = [
+  check('retailer')
+    .isString().withMessage('Retailer must be a string')
+    .notEmpty().withMessage('Retailer cannot be empty'),
+  check('total')
+    .isFloat({ min: 0 }).withMessage('Total must be >= 0'),
+  check('items')
+    .isArray({ min: 1 }).withMessage('Items must be an array with at least one item'),
+  check('items.*.shortDescription')
+    .isString().withMessage('Item short description must be a string')
+    .notEmpty().withMessage('Item short description cannot be empty'),
+  check('items.*.price')
+    .isFloat({ min: 0 }).withMessage('Item price must be >= 0'),
+  check('purchaseDate')
+    // Note that this regex is a simple check for the format, not for the validity of the date.
+    .matches(/^\d{4}-\d{2}-\d{2}$/).withMessage('Purchase date must be in YYYY-MM-DD format'),
+  check('purchaseTime')
+    .matches(/^([01]\d|2[0-3]):([0-5]\d)$/).withMessage('Purchase time must be in HH:MM format')
+];
+
 // Endpoint to process receipts, generate their IDs, and store their points.
-app.post('/receipts/process', (req, res) => {
+app.post('/receipts/process', validateReceipt, (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   const receipt = req.body;
 
   const id = uuidv4();
